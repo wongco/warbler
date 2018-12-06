@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
 from models import db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
@@ -13,17 +13,16 @@ app = Flask(__name__)
 
 # Get DB_URI from environ variable (useful for production/testing) or,
 # if not set there, use development local db.
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    os.environ.get('DATABASE_URL', 'postgres:///warbler'))
+app.config['SQLALCHEMY_DATABASE_URI'] = (os.environ.get(
+    'DATABASE_URL', 'postgres:///warbler'))
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
-
 
 ##############################################################################
 # User signup/login/logout
@@ -96,8 +95,7 @@ def login():
     form = LoginForm()
 
     if form.validate_on_submit():
-        user = User.authenticate(form.username.data,
-                                 form.password.data)
+        user = User.authenticate(form.username.data, form.password.data)
 
         if user:
             do_login(user)
@@ -113,11 +111,15 @@ def login():
 def logout():
     """Handle logout of user."""
 
-    # IMPLEMENT THIS
+    do_logout()
+
+    flash("You have successfully de-warbled.")
+    return redirect("/")
 
 
 ##############################################################################
 # General user routes:
+
 
 @app.route('/users')
 def list_users():
@@ -144,12 +146,8 @@ def users_show(user_id):
 
     # snagging messages in order from the database;
     # user.messages won't be in order by default
-    messages = (Message
-                .query
-                .filter(Message.user_id == user_id)
-                .order_by(Message.timestamp.desc())
-                .limit(100)
-                .all())
+    messages = (Message.query.filter(Message.user_id == user_id).order_by(
+        Message.timestamp.desc()).limit(100).all())
     return render_template('users/show.html', user=user, messages=messages)
 
 
@@ -211,7 +209,25 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get_or_404(g.user.id)
+    form = EditUserForm(obj=user)
+
+    if form.validate_on_submit():
+        user.username = form.username.data
+        user.image_url = form.image_url.data or '/static/images/default-pic.png',
+        user.header_image_url = form.header_image_url.data or '/static/images/warbler-hero.jpg',
+        user.bio = form.bio.data
+
+        db.session.commit()
+
+        return redirect(f"/users/{g.user.id}")
+
+    else:
+        return render_template('users/edit.html', form=form)
 
 
 @app.route('/users/delete', methods=["POST"])
@@ -232,6 +248,7 @@ def delete_user():
 
 ##############################################################################
 # Messages routes:
+
 
 @app.route('/messages/new', methods=["GET", "POST"])
 def messages_add():
@@ -292,11 +309,8 @@ def homepage():
     """
 
     if g.user:
-        messages = (Message
-                    .query
-                    .order_by(Message.timestamp.desc())
-                    .limit(100)
-                    .all())
+        messages = (Message.query.order_by(
+            Message.timestamp.desc()).limit(100).all())
 
         return render_template('home.html', messages=messages)
 
@@ -310,6 +324,7 @@ def homepage():
 #   handled elsewhere)
 #
 # https://stackoverflow.com/questions/34066804/disabling-caching-in-flask
+
 
 @app.after_request
 def add_header(req):
