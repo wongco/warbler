@@ -55,17 +55,11 @@ class User(db.Model):
     )
 
     header_image_url = db.Column(
-        db.Text,
-        default="/static/images/warbler-hero.jpg"
-    )
+        db.Text, default="/static/images/warbler-hero.jpg")
 
-    bio = db.Column(
-        db.Text,
-    )
+    bio = db.Column(db.Text, )
 
-    location = db.Column(
-        db.Text,
-    )
+    location = db.Column(db.Text, )
 
     password = db.Column(
         db.Text,
@@ -73,6 +67,9 @@ class User(db.Model):
     )
 
     messages = db.relationship('Message', backref='user')
+
+    liked_messages = db.relationship(
+        'Message', secondary='likes', backref="users_liked")
 
     followers = db.relationship(
         "User",
@@ -87,13 +84,17 @@ class User(db.Model):
     def is_followed_by(self, other_user):
         """Is this user followed by `other_user`?"""
 
-        found_user_list = [user for user in self.followers if user == other_user]
+        found_user_list = [
+            user for user in self.followers if user == other_user
+        ]
         return len(found_user_list) == 1
 
     def is_following(self, other_user):
         """Is this user following `other_use`?"""
 
-        found_user_list = [user for user in self.following if user == other_user]
+        found_user_list = [
+            user for user in self.following if user == other_user
+        ]
         return len(found_user_list) == 1
 
     @classmethod
@@ -161,6 +162,24 @@ class Message(db.Model):
         db.Integer,
         db.ForeignKey('users.id', ondelete='CASCADE'),
         nullable=False,
+    )
+
+
+class Like(db.Model):
+    """Liked messages."""
+
+    __tablename__ = "likes"
+
+    message_id = db.Column(
+        db.Integer,
+        db.ForeignKey('messages.id'),
+        primary_key=True,
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id'),
+        primary_key=True,
     )
 
 

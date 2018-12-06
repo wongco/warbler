@@ -24,6 +24,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
+db.create_all()
 
 ##############################################################################
 # User signup/login/logout
@@ -311,9 +312,6 @@ def homepage():
 
     if g.user:
         following_ids = [user.id for user in g.user.following]
-
-        # import pdb
-        # pdb.set_trace()
 
         messages = (db.session.query(Message).filter(
             or_(Message.user_id == g.user.id,
