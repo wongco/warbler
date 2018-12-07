@@ -232,6 +232,20 @@ def profile():
         return render_template('users/edit.html', form=form)
 
 
+@app.route("/users/<int:user_id>/likes")
+def display_liked_messages(user_id):
+    """Display user's liked messages."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get(user_id)
+    messages = user.liked_messages
+
+    return render_template("/users/show.html", user=user, messages=messages)
+
+
 @app.route('/users/delete', methods=["POST"])
 def delete_user():
     """Delete user."""
@@ -296,6 +310,29 @@ def messages_destroy(message_id):
     db.session.commit()
 
     return redirect(f"/users/{g.user.id}")
+
+
+@app.route('/messages/<int:message_id>/like', methods=["POST"])
+def like_message(message_id):
+    """Like/Unlike a message."""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    msg = Message.query.get(message_id)
+    user = User.query.get(g.user.id)
+
+    if msg in user.liked_messages:
+        msg_index = user.liked_messages.index(msg)
+        user.liked_messages.pop(msg_index)
+    else:
+        user.liked_messages.append(msg)
+
+    db.session.commit()
+    print(f"Liked")
+
+    return redirect(f"messages/{message_id}")
 
 
 ##############################################################################

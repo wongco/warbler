@@ -32,7 +32,20 @@
               {% endif %}
             </div>
             <p class="single-message">{{ message.text }}</p>
-            <span class="text-muted">{{ message.timestamp.strftime('%d %B %Y') }}</span>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted">{{ message.timestamp.strftime('%d %B %Y') }}</span>
+              <form method="POST" action="/messages/{{ message.id }}/like">
+                <button class="btn btn-link" type="submit">
+                   {% if not g.user.id == message.user_id %}
+                    {% if g.user in message.users_liked %}
+                    <i class="fas fa-lg fa-heart"></i>
+                    {% else %}
+                    <i class="far fa-lg fa-heart"></i>
+                    {% endif %}
+                  {% endif %}
+                </button>
+              </form>
+            </div>
           </div>
         </li>
       </ul>
