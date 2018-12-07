@@ -115,7 +115,7 @@ def logout():
 
     do_logout()
 
-    flash("You have successfully de-warbled.")
+    flash("You have successfully de-warbled.", "success")
     return redirect("/")
 
 
