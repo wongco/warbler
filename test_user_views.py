@@ -64,12 +64,11 @@ class UserViewTestCase(TestCase):
     def test_homepage_for_logged_in_user(self):
 
         with self.client:
+            # create a phantom session and commit session
             with self.client.session_transaction() as s:
 
-                # create a fake session and store user id into current user key
+                # create a fake session and store user id
                 s[CURR_USER_KEY] = self.user.id
-                print(f"\n\n\nKEY: {s[CURR_USER_KEY]}\n\n\n")
-                print(f"\n\n\nUSER: {self.user}\n\n\n")
 
             response = self.client.get("/")
 
