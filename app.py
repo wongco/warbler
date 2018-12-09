@@ -2,7 +2,6 @@ import os
 
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
-from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
@@ -236,7 +235,7 @@ def profile():
 
 @app.route("/users/<int:user_id>/likes")
 def display_liked_messages(user_id):
-    """Display user's liked messages."""
+    """Display any user's liked messages."""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -250,7 +249,7 @@ def display_liked_messages(user_id):
 
 @app.route('/users/delete', methods=["POST"])
 def delete_user():
-    """Delete user."""
+    """Delete current user."""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -270,7 +269,7 @@ def delete_user():
 
 @app.route('/messages/new', methods=["GET", "POST"])
 def messages_add():
-    """Add a message:
+    """Add a message for current user:
 
     Show form if GET. If valid, update message and redirect to user page.
     """
@@ -323,13 +322,14 @@ def like_message(message_id):
         return redirect("/")
 
     msg = Message.query.get(message_id)
-    user = User.query.get(g.user.id)
 
-    if msg in user.liked_messages:
-        msg_index = user.liked_messages.index(msg)
-        user.liked_messages.pop(msg_index)
+    # unfavorite current message
+    if msg in g.user.liked_messages:
+        msg_index = g.user.liked_messages.index(msg)
+        g.user.liked_messages.pop(msg_index)
+    # favorite current
     else:
-        user.liked_messages.append(msg)
+        g.user.liked_messages.append(msg)
 
     db.session.commit()
     print(f"Liked")
@@ -352,10 +352,11 @@ def homepage():
     if g.user:
         following_ids = [user.id for user in g.user.following]
 
-        messages = (db.session.query(Message).filter(
-            or_(Message.user_id == g.user.id,
-                Message.user_id.in_(following_ids))).order_by(
-                    Message.timestamp.desc()).limit(100).all())
+        # filter messages: messages by current user and message by followees
+        messages = db.session.query(Message).filter(
+            (Message.user_id == g.user.id)
+            | (Message.user_id.in_(following_ids))).order_by(
+                Message.timestamp.desc()).limit(100).all()
 
         return render_template('home.html', messages=messages)
 
