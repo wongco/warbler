@@ -231,7 +231,7 @@ def profile():
         return redirect(f"/users/{g.user.id}")
 
     else:
-        return render_template('users/edit.html', form=form)
+        return render_template('users/edit.html', form=form, user=user)
 
 
 @app.route("/users/<int:user_id>/likes")

@@ -26,6 +26,8 @@ class FollowersFollowee(db.Model):
         primary_key=True,
     )
 
+    # used as a passthrough relationship from users <--> users for followers/followees
+
 
 class User(db.Model):
     """User in the system."""
@@ -69,9 +71,11 @@ class User(db.Model):
     # relationship between user table and message table
     messages = db.relationship('Message', backref='user')
 
+    # relationship between user -> likes messages & message -> users who liked the msg
     liked_messages = db.relationship(
         'Message', secondary='likes', backref="users_liked")
 
+    # relationship joining same table - followers & followees
     followers = db.relationship(
         "User",
         secondary="follows",
@@ -165,9 +169,11 @@ class Message(db.Model):
         nullable=False,
     )
 
+    # db relationship in users tables message -> user
+
 
 class Like(db.Model):
-    """Liked messages."""
+    """Connection of a user <-> liked messages."""
 
     __tablename__ = "likes"
 
@@ -182,6 +188,8 @@ class Like(db.Model):
         db.ForeignKey('users.id', ondelete='CASCADE'),
         primary_key=True,
     )
+
+    # used as a passthrough relationship for users and messages
 
 
 def connect_db(app):
