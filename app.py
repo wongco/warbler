@@ -78,7 +78,7 @@ def signup():
             )
             db.session.commit()
 
-        except IntegrityError as e:
+        except IntegrityError:
             flash("Username already taken", 'danger')
             return render_template('users/signup.html', form=form)
 
@@ -215,6 +215,12 @@ def profile():
     form = EditUserForm(obj=user)
 
     if form.validate_on_submit():
+
+        # check if password is incorrect
+        if not User.authenticate(user.username, form.password.data):
+            form.password.errors = ['Password is incorrect. Try again.']
+            return render_template('users/edit.html', form=form)
+
         user.username = form.username.data
         user.image_url = form.image_url.data or '/static/images/default-pic.png',
         user.header_image_url = form.header_image_url.data or '/static/images/warbler-hero.jpg',

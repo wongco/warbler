@@ -37,7 +37,3 @@ class EditUserForm(FlaskForm):
     bio = StringField('Bio')
     password = PasswordField(
         'Verify your password to make changes', validators=[Length(min=6)])
-
-    def validate_password(form, field):
-        if not User.authenticate(g.user.username, field.data):
-            raise ValidationError('Password incorrect')
