@@ -7,8 +7,8 @@
       <div class="col-sm-9">
         <div class="row">
 
+          <!-- Render every user card -->
           {% for user in users %}
-
             <div class="col-lg-4 col-md-6 col-12">
               <div class="card user-card">
                 <div class="card-inner">
@@ -21,9 +21,10 @@
                       <p>@{{ user.username }}</p>
                     </a>
 
+                    <!-- If in curr user view, render correct following buttons  -->
                     {% if g.user %}
                       {% if g.user.is_following(user) %}
-                        <form method="POST">
+                        <form method="POST"
                               action="/users/stop-following/{{ user.id }}">
                           <button class="btn btn-primary btn-sm">Unfollow</button>
                         </form>
@@ -40,7 +41,6 @@
                 </div>
               </div>
             </div>
-
           {% endfor %}
 
         </div>
