@@ -195,7 +195,7 @@ def stop_following(follow_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    followee = User.query.get(follow_id)
+    followee = User.query.get_or_404(follow_id)
     g.user.following.remove(followee)
     db.session.commit()
 
@@ -210,27 +210,26 @@ def profile():
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    user = User.query.get_or_404(g.user.id)
-    form = EditUserForm(obj=user)
+    form = EditUserForm(obj=g.user)
 
     if form.validate_on_submit():
 
         # check if password is incorrect
-        if not User.authenticate(user.username, form.password.data):
+        if not User.authenticate(g.user.username, form.password.data):
             form.password.errors = ['Password is incorrect. Try again.']
-            return render_template('users/edit.html', form=form)
+            return render_template('users/edit.html', form=form, user=g.user)
 
-        user.username = form.username.data
-        user.image_url = form.image_url.data or '/static/images/default-pic.png',
-        user.header_image_url = form.header_image_url.data or '/static/images/warbler-hero.jpg',
-        user.bio = form.bio.data
+        g.user.username = form.username.data
+        g.user.image_url = form.image_url.data or '/static/images/default-pic.png',
+        g.user.header_image_url = form.header_image_url.data or '/static/images/warbler-hero.jpg',
+        g.user.bio = form.bio.data
 
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}")
 
     else:
-        return render_template('users/edit.html', form=form, user=user)
+        return render_template('users/edit.html', form=form, user=g.user)
 
 
 @app.route("/users/<int:user_id>/likes")
@@ -300,22 +299,25 @@ def messages_show(message_id):
 
 @app.route('/messages/<int:message_id>/delete', methods=["POST"])
 def messages_destroy(message_id):
-    """Delete a message."""
+    """Delete a message written by current user."""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
     msg = Message.query.get(message_id)
-    db.session.delete(msg)
-    db.session.commit()
+
+    # server-end check that msg was written by user
+    if msg in g.user.messages:
+        db.session.delete(msg)
+        db.session.commit()
 
     return redirect(f"/users/{g.user.id}")
 
 
 @app.route('/messages/<int:message_id>/like', methods=["POST"])
 def like_message(message_id):
-    """Like/Unlike a message."""
+    """Like/Unlike a message by current user."""
 
     if not g.user:
         flash("Access unauthorized.", "danger")
@@ -323,16 +325,18 @@ def like_message(message_id):
 
     msg = Message.query.get(message_id)
 
-    # unfavorite current message
-    if msg in g.user.liked_messages:
-        msg_index = g.user.liked_messages.index(msg)
-        g.user.liked_messages.pop(msg_index)
-    # favorite current
-    else:
-        g.user.liked_messages.append(msg)
+    # server-end check that msg was not written by user
+    if msg not in g.user.messages:
+        # unfavorite current message
+        if msg in g.user.liked_messages:
+            msg_index = g.user.liked_messages.index(msg)
+            g.user.liked_messages.pop(msg_index)
+        # favorite current
+        else:
+            g.user.liked_messages.append(msg)
 
-    db.session.commit()
-    print(f"Liked")
+        db.session.commit()
+        flash("Liked!", "success")
 
     return redirect(f"messages/{message_id}")
 
