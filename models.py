@@ -66,6 +66,7 @@ class User(db.Model):
         nullable=False,
     )
 
+    # relationship between user table and message table
     messages = db.relationship('Message', backref='user')
 
     liked_messages = db.relationship(
@@ -172,13 +173,13 @@ class Like(db.Model):
 
     message_id = db.Column(
         db.Integer,
-        db.ForeignKey('messages.id'),
+        db.ForeignKey('messages.id', ondelete='CASCADE'),
         primary_key=True,
     )
 
     user_id = db.Column(
         db.Integer,
-        db.ForeignKey('users.id'),
+        db.ForeignKey('users.id', ondelete='CASCADE'),
         primary_key=True,
     )
 

@@ -1,8 +1,6 @@
-from flask import g
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField
-from wtforms.validators import DataRequired, Email, Length, ValidationError
-from models import User
+from wtforms.validators import DataRequired, Email, Length
 
 
 class MessageForm(FlaskForm):
