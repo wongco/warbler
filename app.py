@@ -78,7 +78,7 @@ def signup():
             db.session.commit()
 
         except IntegrityError:
-            flash("Username already taken", 'danger')
+            flash("Username already taken", "danger")
             return render_template('users/signup.html', form=form)
 
         do_login(user)
@@ -103,7 +103,7 @@ def login():
             flash(f"Hello, {user.username}!", "success")
             return redirect("/")
 
-        flash("Invalid credentials.", 'danger')
+        flash("Invalid credentials.", "danger")
 
     return render_template('users/login.html', form=form)
 
@@ -217,7 +217,7 @@ def profile():
         # check if password is incorrect
         if not User.authenticate(g.user.username, form.password.data):
             form.password.errors = ['Password is incorrect. Try again.']
-            return render_template('users/edit.html', form=form, user=g.user)
+            return render_template('users/edit.html', form=form)
 
         g.user.username = form.username.data
         g.user.image_url = form.image_url.data or '/static/images/default-pic.png',
@@ -229,7 +229,7 @@ def profile():
         return redirect(f"/users/{g.user.id}")
 
     else:
-        return render_template('users/edit.html', form=form, user=g.user)
+        return render_template('users/edit.html', form=form)
 
 
 @app.route("/users/<int:user_id>/likes")
@@ -331,12 +331,13 @@ def like_message(message_id):
         if msg in g.user.liked_messages:
             msg_index = g.user.liked_messages.index(msg)
             g.user.liked_messages.pop(msg_index)
+            flash("Unliked!", "danger")
         # favorite current
         else:
             g.user.liked_messages.append(msg)
+            flash("Liked!", "success")
 
         db.session.commit()
-        flash("Liked!", "success")
 
     return redirect(f"messages/{message_id}")
 
